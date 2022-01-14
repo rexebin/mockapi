@@ -2,8 +2,15 @@
   "name": "mockapi",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
-  "private": true,
+  "scripts": {
+    "build": "nx build msw",
+    "publish": "cd dist/packages/msw && npm publish --access public"
+  },
+  "private": false,
+  "author": {
+    "name": "Rex Ye",
+    "url": "epicerp.app"
+  },
   "dependencies": {
     "tslib": "^2.0.0"
   },

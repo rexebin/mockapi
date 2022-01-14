@@ -8,7 +8,8 @@ Browser.
 
 However, just like developing a real API server, writing every endpoint is tedious, and it can get messy very quickly.
 
-`@mockapi/msw` is born to solve this problem. With `@mockapi/msw`, you can mock a whole set of standard CRUD endpoints for any entity without any code. All you have to do is configure your base URL and wire it up with `msw`.
+`@mockapi/msw` is born to solve this problem. With `@mockapi/msw`, you can mock a whole set of standard CRUD endpoints
+for any entity without any code. All you have to do is configure your base URL and wire it up with `msw`.
 
 ## Endpoints Provided
 
@@ -19,6 +20,9 @@ However, just like developing a real API server, writing every endpoint is tedio
 5. **DELETE**: `baseUrl/entity/:id`, delete an entity
 
 You can override the above endpoints by providing handlers with identical signatures.
+
+You can also build your own set of CRUD endpoints by building on top of or replacing the `handlerfactory`(introduced
+below) using the provided repository methods for data access.
 
 You can extend the endpoints by wiring up your endpoints.
 
@@ -53,7 +57,10 @@ export const {handlerFactory, repositoryFactory, clearAllData} = configMockApi({
 
 - `handlerFactory` is the function to generate and wire up all the endpoints.
 - `repositoryFactory` is the function to access mocked data in your custom endpoints and tests.
-- `configMockApi` takes a `store` of type `Store<T extends BaseEntity>` as an argument to configure what storage the mocked data will be stored. By default, it uses `localStorage`. You can also use [sessionStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage) or [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) to store the data.
+- `configMockApi` takes a `store` of type `Store<T extends BaseEntity>` as an argument to configure what storage the
+  mocked data will be stored. By default, it uses `localStorage`. You can also
+  use [sessionStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage)
+  or [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) to store the data.
 
  ```typescript
 // Store.ts
@@ -107,7 +114,8 @@ export function seedHeroes() {
 
 #### 3. Optional: extend endpoints and override provided endpoints. You can skip this step if you don't need to extend or override the endpoints.
 
-The `handlerFactory` takes a second parameter of type `RestHandler[]`, which will take precedence over the provided endpoints.
+The `handlerFactory` takes a second parameter of type `RestHandler[]`, which will take precedence over the provided
+endpoints.
 
 ```typescript
 // heroHandler.ts
@@ -214,7 +222,8 @@ module.exports = {
 
 ## Usage
 
-If set up correctly, you can use the mock data in your tests like the below example. For more examples, please check out `/packages/tests`.
+If set up correctly, you can use the mock data in your tests like the below example. For more examples, please check
+out `/packages/tests`.
 
 ```typescript
 // getAll.spec.ts
@@ -249,7 +258,9 @@ describe('Get Items Endpoint', function () {
 
 ### Error Response
 
-You can use the provided `requestErrorResponse` function to tell the mocked endpoint to return an error response blindly. To make `requestErrorResponse` work for your endpoints, you need to add the following code to your endpoint before any other code:
+You can use the provided `requestErrorResponse` function to tell the mocked endpoint to return an error response
+blindly. To make `requestErrorResponse` work for your endpoints, you need to add the following code to your endpoint
+before any other code:
 
 ```typescript
 rest.get(`${baseUrl}/your-endpoint`, (req, res, ctx) => {
