@@ -1,94 +1,292 @@
+# MockAPI
+
+## The problem
+
+Inspired by Kent C Dodds's blog post [Stop mocking fetch](https://kentcdodds.com/blog/stop-mocking-fetch), I started to
+use [Mock Service Worker](https://mswjs.io/) to mock an API server both for unit testing with `jest` and for the
+Browser.
+
+However, just like developing a real API server, writing every endpoint is tedious, and it can get messy very quickly.
+
+`@mockapi/msw` is born to solve this problem. With `@mockapi/msw`, you can mock a whole set of standard CRUD endpoints for any entity without any code. All you have to do is configure your base URL and wire it up with `msw`.
+
+## Endpoints Provided
+
+1. **GET**: `baseUrl/entity`, get all entities
+2. **GET**: `baseUrl/entity/:id`, get an entity by id
+3. **POST**: `baseUrl/entity`, create an entity
+4. **PUT**: `baseUrl/entity/:id`, update an entity
+5. **DELETE**: `baseUrl/entity/:id`, delete an entity
+
+You can override the above endpoints by providing handlers with identical signatures.
+
+You can extend the endpoints by wiring up your endpoints.
+
+## Setup
+
+### Install `@mockapi/msw`
+
+```bash
+yarn add --dev @mockapi/msw
+```
+
+or
+
+```bash
+npm install --dev @mockapi/msw
+```
+
+### Configure `@mockapi/msw`
+
+1. Create a typescript file with the following content:
+
+```typescript
+// server.ts
+import {configMockApi} from '@mockapi/msw';
+
+export const baseUrl = 'http://localhost:5000'; // change to your own base url
+
+export const {handlerFactory, repositoryFactory, clearAllData} = configMockApi({
+  baseUrl: baseUrl,
+});
+```
+
+- `handlerFactory` is the function to generate and wire up all the endpoints.
+- `repositoryFactory` is the function to access mocked data in your custom endpoints and tests.
+- `configMockApi` takes a `store` of type `Store<T extends BaseEntity>` as an argument to configure what storage the mocked data will be stored. By default, it uses `localStorage`. You can also use [sessionStorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage) or [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) to store the data.
+
+ ```typescript
+// Store.ts
+export type Store<T extends BaseEntity> = {
+  setItem: (key: string, value: T[]) => void;
+  getItem: (key: string) => T[] | null;
+  clearAll: () => void;
+};
+
+// BaseEntity.ts
+export interface BaseEntity extends Record<string, unknown> {
+  id: string | number;
+}
+```
+
+2. Create your mock entity:
+
+```typescript
+// hero.ts
+import {repositoryFactory} from '../server/server';
+
+export type Hero = {
+  id: string;
+  name: string;
+};
+
+export const heroKey = 'Hero';
+
+export const heroSeeds: Hero[] = [
+  {
+    id: '1',
+    name: 'Iron Man',
+  },
+  {
+    id: '2',
+    name: 'Spider Man',
+  },
+  {
+    id: '3',
+    name: 'Ant Man',
+  },
+];
+
+export function seedHeroes() {
+  const repository = repositoryFactory<Hero>(heroKey);
+  repository.seed(heroSeeds);
+}
 
 
-# Mockapi
+```
 
-This project was generated using [Nx](https://nx.dev).
+3. Optional: extend endpoints and override provided endpoints. You can skip this step if you don't need to extend or override the endpoints.
 
-<p style="text-align: center;"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="450"></p>
+The `handlerFactory` takes a second parameter of type `RestHandler[]`, which will take precedence over the provided endpoints.
 
-🔎 **Smart, Fast and Extensible Build System**
+```typescript
+// heroHandler.ts
+import {getDefaultGetItemsResponse} from '@mockapi/msw';
 
-## Adding capabilities to your workspace
+import {Hero, heroKey} from './hero';
+import {rest} from 'msw';
+import {baseUrl, repositoryFactory} from '../server/server';
 
-Nx supports many plugins which add capabilities for developing different types of applications and different tools.
+export const heroHandlers = [
+  // override:  GET: `baseUrl/hero`
+  rest.get(`${baseUrl}/${heroKey}`, (req, res, ctx) => {
+    // getDefaultGetItemsResponse is a utility function to get items from the store and return a Result<T[]> containing either an error response or all the items in store.
+    const defaultHttpResponse = getDefaultGetItemsResponse<Hero>(
+      heroKey,
+      repositoryFactory<Hero>(heroKey)
+    )(res, ctx);
+    if (defaultHttpResponse.response) {
+      return defaultHttpResponse.response;
+    }
 
-These capabilities include generating applications, libraries, etc as well as the devtools to test, and build projects as well.
+    const search = req.url.searchParams.get('search');
+    const result = defaultHttpResponse.data.filter((hero) =>
+      search ? hero.name.toLowerCase().includes(search?.toLowerCase()) : true
+    );
 
-Below are our core plugins:
+    return res(ctx.status(200), ctx.json(result));
+  }),
 
-- [React](https://reactjs.org)
-  - `npm install --save-dev @nrwl/react`
-- Web (no framework frontends)
-  - `npm install --save-dev @nrwl/web`
-- [Angular](https://angular.io)
-  - `npm install --save-dev @nrwl/angular`
-- [Nest](https://nestjs.com)
-  - `npm install --save-dev @nrwl/nest`
-- [Express](https://expressjs.com)
-  - `npm install --save-dev @nrwl/express`
-- [Node](https://nodejs.org)
-  - `npm install --save-dev @nrwl/node`
+  // new endpoint:  GET: `baseUrl/hero/getByName/:name`
+  rest.get(`${baseUrl}/${heroKey}/getByName/:name`, (req, res, ctx) => {
+    const defaultHttpResponse = getDefaultGetItemsResponse<Hero>(
+      heroKey,
+      repositoryFactory<Hero>(heroKey)
+    )(res, ctx);
+    if (defaultHttpResponse.response) {
+      return defaultHttpResponse.response;
+    }
 
-There are also many [community plugins](https://nx.dev/community) you could add.
+    const {name} = req.params;
 
-## Generate an application
+    const result = defaultHttpResponse.data.find((hero) => hero.name === name);
 
-Run `nx g @nrwl/react:app my-app` to generate an application.
-
-> You can use any of the plugins above to generate applications as well.
-
-When using Nx, you can create multiple applications and libraries in the same workspace.
-
-## Generate a library
-
-Run `nx g @nrwl/react:lib my-lib` to generate a library.
-
-> You can also use any of the plugins above to generate libraries as well.
-
-Libraries are shareable across libraries and applications. They can be imported from `@mockapi/mylib`.
-
-## Development server
-
-Run `nx serve my-app` for a dev server. Navigate to http://localhost:4200/. The app will automatically reload if you change any of the source files.
-
-## Code scaffolding
-
-Run `nx g @nrwl/react:component my-component --project=my-app` to generate a new component.
-
-## Build
-
-Run `nx build my-app` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
-
-## Running unit tests
-
-Run `nx test my-app` to execute the unit tests via [Jest](https://jestjs.io).
-
-Run `nx affected:test` to execute the unit tests affected by a change.
-
-## Running end-to-end tests
-
-Run `ng e2e my-app` to execute the end-to-end tests via [Cypress](https://www.cypress.io).
-
-Run `nx affected:e2e` to execute the end-to-end tests affected by a change.
-
-## Understand your workspace
-
-Run `nx dep-graph` to see a diagram of the dependencies of your projects.
-
-## Further help
-
-Visit the [Nx Documentation](https://nx.dev) to learn more.
+    return res(ctx.status(200), ctx.json(result));
+  }),
+];
 
 
+```
 
-## ☁ Nx Cloud
+4. Wire up with Mock Service Work for `jest`. For browser integration, read the msw doc [here](https://mswjs.io/docs/getting-started/integrate/browser).
 
-### Distributed Computation Caching & Distributed Task Execution
+```typescript
+//starup.ts
+import {setupServer} from 'msw/node';
+import {
+  heroHandlers,
+  heroKey,
+  seedHeroes
+} from '../entity';
+import {clearAllData, handlerFactory} from './server';
 
-<p style="text-align: center;"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-cloud-card.png"></p>
+const handlers = [
+  ...handlerFactory(heroKey, heroHandlers),
+  // other endpoints, for example:
+  //...handlerFactory(todoKey),
+];
 
-Nx Cloud pairs with Nx in order to enable you to build and test code more rapidly, by up to 10 times. Even teams that are new to Nx can connect to Nx Cloud and start saving time instantly.
+const server = setupServer(...handlers);
 
-Teams using Nx gain the advantage of building full-stack applications with their preferred framework alongside Nx’s advanced code generation and project dependency graph, plus a unified experience for both frontend and backend developers.
+beforeAll(() => server.listen());
 
-Visit [Nx Cloud](https://nx.app/) to learn more.
+beforeEach(() => {
+  seedHeroes();
+  // other data seeding, for example:
+  //seedTodos();
+});
+
+afterEach(() => {
+  clearAllData();
+  server.resetHandlers();
+});
+
+afterAll(() => server.close());
+
+```
+
+4. Wire up with `jest`
+
+```typescript
+//jest.setup.ts
+import './src/lib/server/startup';
+
+```
+
+```javascript
+//jest.config.js
+module.exports = {
+  //other configurations
+  //...
+  setupFilesAfterEnv: ['./jest.setup.ts']
+};
+```
+
+## Usage
+
+If set up correctly, you can use the mock data in your tests like the below example. For more examples, please check out `/packages/tests`.
+
+```typescript
+// getAll.spec.ts
+import {baseUrl} from '../server/server';
+import {todoKey, todoSeeds} from '../entities';
+import axios from 'axios';
+import {requestErrorResponse} from '@mockapi/msw';
+
+describe('Get Items Endpoint', function () {
+  it('should get todos', async function () {
+    const data = await axios.get(`${baseUrl}/${todoKey}`);
+    expect(data.data).toMatchObject(todoSeeds);
+  });
+
+  it('should throw error on request', async function () {
+    requestErrorResponse();
+
+    try {
+      await axios.get(`${baseUrl}/${todoKey}`);
+    } catch (e: any) {
+      expect(e.response.status).toBe(400);
+      expect(e.response.data).toMatchInlineSnapshot(`
+        Object {
+          "detail": "Something Went Wrong on The Server",
+        }
+      `);
+    }
+  });
+});
+
+```
+
+### Error Response
+
+You can use the provided `requestErrorResponse` function to tell the mocked endpoint to return an error response blindly. To make `requestErrorResponse` work for your endpoints, you need to add the following code to your endpoint before any other code:
+
+```typescript
+rest.get(`${baseUrl}/your-endpoint`, (req, res, ctx) => {
+  const errorResponse = getErrorResponse(res, ctx);
+  if (errorResponse) {
+    return {response: errorResponse, data: []};
+  }
+  // do your stuff
+});
+```
+
+For your information, the code for `getErrorResponse` is as below. You can implement your own if you want.
+
+```typescript
+// getErrorResponse.ts
+import {DefaultRequestBody, ResponseComposition, RestContext} from 'msw';
+
+const errorKey = '400';
+
+export function requestErrorResponse() {
+  localStorage.setItem(errorKey, 'true');
+}
+
+export function getErrorResponse(res: ResponseComposition<DefaultRequestBody>, ctx: RestContext) {
+  if (localStorage.getItem(errorKey)) {
+    return res(
+      ctx.status(400),
+      ctx.json({
+        detail: 'Something Went Wrong on The Server',
+      })
+    );
+  }
+  return;
+}
+
+
+```
+
+
+

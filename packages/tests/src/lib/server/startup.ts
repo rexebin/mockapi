@@ -6,7 +6,7 @@ import {
   seedTodos,
   todoKey,
 } from '../entities';
-import { handlerFactory } from './server';
+import { clearAllData, handlerFactory } from './server';
 
 const handlers = [
   ...handlerFactory(todoKey),
@@ -23,8 +23,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  clearAllData();
   server.resetHandlers();
-  localStorage.clear();
 });
 
 afterAll(() => server.close());

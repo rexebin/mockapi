@@ -18,5 +18,6 @@ export function configMockApi<T extends BaseEntity>({
     repositoryFactory: <TR extends BaseEntity>(entityName: string) =>
       getRepository<TR>(entityName, store as unknown as Store<TR>),
     handlerFactory: getDefaultEndpoints(baseUrl, store),
+    clearAllData: () => store.clearAll(),
   };
 }

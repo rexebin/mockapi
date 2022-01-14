@@ -3,9 +3,9 @@ import { Store } from './store';
 
 export type Repository<T extends BaseEntity> = {
   getItems: () => Result<T[]>;
-  getItemById: (id: string) => Result<T>;
+  getItemById: (id: string | number) => Result<T>;
   addItem: (item: T) => void;
-  deleteItem: (id: string) => void;
+  deleteItem: (id: string | number) => void;
   editItem: (item: T) => void;
   seed: (items: T[]) => void;
 };
@@ -16,9 +16,9 @@ export function getRepository<T extends BaseEntity>(
 ): Repository<T> {
   return {
     getItems: () => getItems<T>(entityName, store),
-    getItemById: (id: string) => getItemById<T>(id, entityName, store),
+    getItemById: (id: string | number) => getItemById<T>(id, entityName, store),
     addItem: (item: T) => addItem<T>(item, entityName, store),
-    deleteItem: (id: string) => deleteItem<T>(id, entityName, store),
+    deleteItem: (id: string | number) => deleteItem<T>(id, entityName, store),
     editItem: (item: T) => editItem<T>(item, entityName, store),
     seed: (items: T[]) => seed<T>(items, entityName, store),
   };
@@ -30,7 +30,7 @@ export interface Result<T> {
 }
 
 function ensureItemIsInStore<T extends BaseEntity>(
-  id: string,
+  id: string | number,
   entityName: string,
   store: Store<T>
 ) {
@@ -56,7 +56,7 @@ function getItems<T extends BaseEntity>(
 }
 
 function getItemById<T extends BaseEntity>(
-  id: string,
+  id: string | number,
   entityName: string,
   store: Store<T>
 ): Result<T> {
@@ -83,7 +83,7 @@ function addItem<T extends BaseEntity>(
 }
 
 function deleteItem<T extends BaseEntity>(
-  id: string,
+  id: string | number,
   entityName: string,
   store: Store<T>
 ): void {

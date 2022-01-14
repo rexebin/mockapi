@@ -18,7 +18,7 @@ describe('Endpoints Extension and Override', function () {
 
   it('should add custom endpoint', async function () {
     const data = await axios.get(
-      `${baseUrl}/${heroKey}/${encodeURI('Iron Man')}`
+      `${baseUrl}/${heroKey}/getByName/${encodeURI('Iron Man')}`
     );
     expect(data.data).toMatchObject({
       id: '1',

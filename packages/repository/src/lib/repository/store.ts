@@ -3,6 +3,7 @@ import { BaseEntity } from '../model';
 export type Store<T extends BaseEntity> = {
   setItem: (key: string, value: T[]) => void;
   getItem: (key: string) => T[] | null;
+  clearAll: () => void;
 };
 
 export const localStorageStore = {
@@ -12,4 +13,5 @@ export const localStorageStore = {
   },
   setItem: (key: string, value: unknown) =>
     localStorage.setItem(key, JSON.stringify(value)),
+  clearAll: () => localStorage.clear(),
 };

@@ -22,7 +22,7 @@ export const heroHandlers = [
     return res(ctx.status(200), ctx.json(result));
   }),
 
-  rest.get(`${baseUrl}/${heroKey}/:name`, (req, res, ctx) => {
+  rest.get(`${baseUrl}/${heroKey}/getByName/:name`, (req, res, ctx) => {
     const defaultHttpResponse = getDefaultGetItemsResponse<Hero>(
       heroKey,
       repositoryFactory<Hero>(heroKey)

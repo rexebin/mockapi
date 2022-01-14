@@ -1,3 +1,3 @@
 export interface BaseEntity extends Record<string, unknown> {
-  id: string;
+  id: string | number;
 }
