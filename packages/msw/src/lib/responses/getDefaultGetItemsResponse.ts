@@ -5,7 +5,8 @@ import {
   RestContext,
 } from 'msw';
 import { getErrorResponse } from './getErrorResponse';
-import { BaseEntity, Repository } from '@mockapi/repository';
+import { Repository } from '../repository';
+import { BaseEntity } from '../model';
 
 export type HttpResponseResult<T> = {
   response?:

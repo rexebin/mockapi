@@ -2,7 +2,6 @@
   "version": 2,
   "projects": {
     "msw": "packages/msw",
-    "repository": "packages/repository",
     "tests": "packages/tests"
   }
 }

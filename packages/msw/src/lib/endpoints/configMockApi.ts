@@ -1,9 +1,5 @@
-import {
-  BaseEntity,
-  getRepository,
-  localStorageStore,
-  Store,
-} from '@mockapi/repository';
+import { BaseEntity } from '../model';
+import { getRepository, localStorageStore, Store } from '../repository';
 
 import { getDefaultEndpoints } from './getDefaultEndpoints';
 

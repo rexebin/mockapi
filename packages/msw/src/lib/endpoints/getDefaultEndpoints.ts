@@ -1,7 +1,8 @@
 import { rest, RestHandler } from 'msw';
-import { BaseEntity, getRepository, Store } from '@mockapi/repository';
+import { getRepository, Store } from '../repository';
 
 import { getDefaultGetItemsResponse, getErrorResponse } from '../responses';
+import { BaseEntity } from '../model';
 
 export const getDefaultEndpoints =
   <T extends BaseEntity>(baseUrl: string, store: Store<T>) =>

@@ -1,0 +1,9 @@
+{
+  "name": "@mockapi/msw",
+  "version": "0.0.1",
+  "license": "MIT",
+  "description": "Mock an API server with complete CRUD endpoints for all entities with Mock Service Worker without writing any code.",
+  "dependencies": {
+    "msw": "^0.36.4"
+  }
+}

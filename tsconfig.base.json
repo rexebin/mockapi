@@ -16,7 +16,6 @@
     "baseUrl": ".",
     "paths": {
       "@mockapi/msw": ["packages/msw/src/index.ts"],
-      "@mockapi/repository": ["packages/repository/src/index.ts"],
       "@mockapi/tests": ["packages/tests/src/index.ts"]
     }
   },
