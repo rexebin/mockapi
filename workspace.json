@@ -1,4 +1,8 @@
 {
   "version": 2,
-  "projects": {}
+  "projects": {
+    "msw": "packages/msw",
+    "repository": "packages/repository",
+    "tests": "packages/tests"
+  }
 }
