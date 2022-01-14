@@ -1,10 +1,10 @@
 {
   "name": "mockapi",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "license": "MIT",
   "scripts": {
     "build": "nx build msw",
-    "publish": "cd dist/packages/msw && npm publish --access public"
+    "publish-npm": "cd dist/packages/msw && npm publish --access public"
   },
   "private": false,
   "author": {

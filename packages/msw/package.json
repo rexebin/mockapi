@@ -1,10 +1,14 @@
 {
   "name": "@mockapi/msw",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "license": "MIT",
   "author": {
     "name": "Rex Ye",
     "url": "epicerp.app"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rexebin/mockapi"
   },
   "keywords": [
     "Mock Service Worker",
