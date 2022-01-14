@@ -38,7 +38,7 @@ npm install --dev @mockapi/msw
 
 ### Configure `@mockapi/msw`
 
-1. Create a typescript file with the following content:
+#### 1. Create a typescript file with the following content:
 
 ```typescript
 // server.ts
@@ -69,7 +69,7 @@ export interface BaseEntity extends Record<string, unknown> {
 }
 ```
 
-2. Create your mock entity:
+#### 2. Create your mock entity:
 
 ```typescript
 // hero.ts
@@ -105,7 +105,7 @@ export function seedHeroes() {
 
 ```
 
-3. Optional: extend endpoints and override provided endpoints. You can skip this step if you don't need to extend or override the endpoints.
+#### 3. Optional: extend endpoints and override provided endpoints. You can skip this step if you don't need to extend or override the endpoints.
 
 The `handlerFactory` takes a second parameter of type `RestHandler[]`, which will take precedence over the provided endpoints.
 
@@ -158,7 +158,7 @@ export const heroHandlers = [
 
 ```
 
-4. Wire up with Mock Service Work for `jest`. For browser integration, read the msw doc [here](https://mswjs.io/docs/getting-started/integrate/browser).
+#### 4. Wire up with Mock Service Work for `jest`. For browser integration, read the msw doc [here](https://mswjs.io/docs/getting-started/integrate/browser).
 
 ```typescript
 //starup.ts
@@ -195,7 +195,7 @@ afterAll(() => server.close());
 
 ```
 
-4. Wire up with `jest`
+#### 5. Wire up with `jest`
 
 ```typescript
 //jest.setup.ts
