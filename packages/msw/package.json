@@ -1,11 +1,29 @@
 {
   "name": "@mockapi/msw",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "license": "MIT",
   "author": {
     "name": "Rex Ye",
     "url": "epicerp.app"
   },
+  "keywords": [
+    "Mock Service Worker",
+    "testing",
+    "jest",
+    "api",
+    "fetch",
+    "axios",
+    "http server",
+    "unit test",
+    "unit testing",
+    "web development",
+    "react",
+    "angular",
+    "vue",
+    "typescript",
+    "javascript",
+    "msw"
+  ],
   "description": "Mock an API server with complete CRUD endpoints for all entities with Mock Service Worker without writing any code.",
   "dependencies": {
     "msw": "^0.36.4"

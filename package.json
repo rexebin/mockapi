@@ -1,6 +1,6 @@
 {
   "name": "mockapi",
-  "version": "0.0.0",
+  "version": "0.0.3",
   "license": "MIT",
   "scripts": {
     "build": "nx build msw",
@@ -14,6 +14,24 @@
   "dependencies": {
     "tslib": "^2.0.0"
   },
+  "keywords": [
+    "Mock Service Worker",
+    "testing",
+    "jest",
+    "api",
+    "fetch",
+    "axios",
+    "http server",
+    "unit test",
+    "unit testing",
+    "web development",
+    "react",
+    "angular",
+    "vue",
+    "typescript",
+    "javascript",
+    "msw"
+  ],
   "devDependencies": {
     "@nrwl/cli": "13.4.4",
     "@nrwl/eslint-plugin-nx": "13.4.4",
