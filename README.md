@@ -48,7 +48,7 @@ npm install --dev @mockapi/msw
 // server.ts
 import {configMockApi} from '@mockapi/msw';
 
-export const baseUrl = 'http://localhost:5000'; // change to your own base url
+export const baseUrl = 'http://localhost:5000/api/v1'; // change to your own base url
 
 export const {handlerFactory, repositoryFactory, clearAllData} = configMockApi({
   baseUrl: baseUrl,
@@ -118,46 +118,38 @@ The `handlerFactory` takes a second parameter of type `RestHandler[]`, which wil
 endpoints.
 
 ```typescript
-// heroHandler.ts
-import {getDefaultGetItemsResponse} from '@mockapi/msw';
+// heroHandlers.ts
+import { errorResponseFactory } from '@mockapi/msw';
 
-import {Hero, heroKey} from './hero';
-import {rest} from 'msw';
-import {baseUrl, repositoryFactory} from '../server/server';
+import { Hero, heroKey } from './hero';
+import { rest } from 'msw';
+import { baseUrl, repositoryFactory } from '../server/server';
+
+const repository = repositoryFactory<Hero>(heroKey);
 
 export const heroHandlers = [
-  // override:  GET: `baseUrl/hero`
   rest.get(`${baseUrl}/${heroKey}`, (req, res, ctx) => {
-    // getDefaultGetItemsResponse is a utility function to get items from the store and return a Result<T[]> containing either an error response or all the items in store.
-    const defaultHttpResponse = getDefaultGetItemsResponse<Hero>(
-      heroKey,
-      repositoryFactory<Hero>(heroKey)
-    )(res, ctx);
-    if (defaultHttpResponse.response) {
-      return defaultHttpResponse.response;
+    const { data: items = [], error } = repository.getItems();
+    if (error) {
+      return errorResponseFactory(res, ctx)(error);
     }
-
     const search = req.url.searchParams.get('search');
-    const result = defaultHttpResponse.data.filter((hero) =>
+    const result = items.filter((hero) =>
       search ? hero.name.toLowerCase().includes(search?.toLowerCase()) : true
     );
 
     return res(ctx.status(200), ctx.json(result));
   }),
 
-  // new endpoint:  GET: `baseUrl/hero/getByName/:name`
   rest.get(`${baseUrl}/${heroKey}/getByName/:name`, (req, res, ctx) => {
-    const defaultHttpResponse = getDefaultGetItemsResponse<Hero>(
-      heroKey,
-      repositoryFactory<Hero>(heroKey)
-    )(res, ctx);
-    if (defaultHttpResponse.response) {
-      return defaultHttpResponse.response;
+    const { data: items = [], error } = repository.getItems();
+    if (error) {
+      return errorResponseFactory(res, ctx)(error);
     }
 
-    const {name} = req.params;
+    const { name } = req.params;
 
-    const result = defaultHttpResponse.data.find((hero) => hero.name === name);
+    const result = items.find((hero) => hero.name === name);
 
     return res(ctx.status(200), ctx.json(result));
   }),
@@ -184,7 +176,7 @@ const handlers = [
   //...handlerFactory(todoKey),
 ];
 
-const server = setupServer(...handlers);
+export const server = setupServer(...handlers);
 
 beforeAll(() => server.listen());
 
@@ -230,27 +222,11 @@ out `/packages/tests`.
 import {baseUrl} from '../server/server';
 import {todoKey, todoSeeds} from '../entities';
 import axios from 'axios';
-import {requestErrorResponse} from '@mockapi/msw';
 
 describe('Get Items Endpoint', function () {
   it('should get todos', async function () {
     const data = await axios.get(`${baseUrl}/${todoKey}`);
     expect(data.data).toMatchObject(todoSeeds);
-  });
-
-  it('should throw error on request', async function () {
-    requestErrorResponse();
-
-    try {
-      await axios.get(`${baseUrl}/${todoKey}`);
-    } catch (e: any) {
-      expect(e.response.status).toBe(400);
-      expect(e.response.data).toMatchInlineSnapshot(`
-        Object {
-          "detail": "Something Went Wrong on The Server",
-        }
-      `);
-    }
   });
 });
 
@@ -258,46 +234,38 @@ describe('Get Items Endpoint', function () {
 
 ### Error Response
 
-You can use the provided `requestErrorResponse` function to tell the mocked endpoint to return an error response
-blindly. To make `requestErrorResponse` work for your endpoints, you need to add the following code to your endpoint
-before any other code:
+The best way to handle errors is to override the target endpoint using `server.use` in the tests. For more details, read the [doc here](https://mswjs.io/docs/api/setup-server/use)
+
+### Repository
+
+The library provides a repository for each entity, the interface is as follows: 
 
 ```typescript
-rest.get(`${baseUrl}/your-endpoint`, (req, res, ctx) => {
-  const errorResponse = getErrorResponse(res, ctx);
-  if (errorResponse) {
-    return {response: errorResponse, data: []};
-  }
-  // do your stuff
-});
+export type Repository<T extends BaseEntity> = {
+  getItems: () => Result<T[]>;
+  getItemById: (id: string | number) => Result<T>;
+  addItem: (item: T) => Result<never>;
+  deleteItem: (id: string | number) => Result<never>;
+  editItem: (item: T) => Result<never>;
+  seed: (items: T[]) => void;
+};
 ```
 
-For your information, the code for `getErrorResponse` is as below. You can implement your own if you want.
+#### Result<T>
+
+Most of the repository methods return a `Result<T>` type, which contains either the data or the error. 
+
+This `Result` is originated from Valdimir Kudinov's Result class described here: [Functional C#: Handling failures, input errors](https://enterprisecraftsmanship.com/posts/functional-c-handling-failures-input-errors/).
 
 ```typescript
-// getErrorResponse.ts
-import {DefaultRequestBody, ResponseComposition, RestContext} from 'msw';
-
-const errorKey = '400';
-
-export function requestErrorResponse() {
-  localStorage.setItem(errorKey, 'true');
+export interface Result<T> {
+  error?: { statusCode: number; message: string };
+  data?: T;
 }
-
-export function getErrorResponse(res: ResponseComposition<DefaultRequestBody>, ctx: RestContext) {
-  if (localStorage.getItem(errorKey)) {
-    return res(
-      ctx.status(400),
-      ctx.json({
-        detail: 'Something Went Wrong on The Server',
-      })
-    );
-  }
-  return;
-}
-
-
 ```
 
+#### To get a repository for an entity: 
 
-
+```typescript
+const repository = repositoryFactory<Hero>(heroKey);
+```

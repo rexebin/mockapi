@@ -1,8 +1,7 @@
 import { rest, RestHandler } from 'msw';
 import { getRepository, Store } from '../repository';
-
-import { getDefaultGetItemsResponse, getErrorResponse } from '../responses';
 import { BaseEntity } from '../model';
+import { errorResponseFactory } from './errorResponseFactory';
 
 export const getDefaultEndpoints =
   <T extends BaseEntity>(baseUrl: string, store: Store<T>) =>
@@ -11,92 +10,64 @@ export const getDefaultEndpoints =
     return [
       ...handler,
       rest.get(`${baseUrl}/${entityName}`, (req, res, ctx) => {
-        const defaultHttpResponse = getDefaultGetItemsResponse(
-          entityName,
-          repository
-        )(res, ctx);
-        if (defaultHttpResponse.response) {
-          return defaultHttpResponse.response;
+        const { data: items = [], error } = repository.getItems();
+        if (error) {
+          return errorResponseFactory(res, ctx)(error);
         }
-
-        return res(ctx.status(200), ctx.json(defaultHttpResponse.data));
+        return res(ctx.status(200), ctx.json(items));
       }),
 
       rest.get(`${baseUrl}/${entityName}/:id`, (req, res, ctx) => {
-        const errorResponse = getErrorResponse(res, ctx);
-        if (errorResponse) {
-          return errorResponse;
-        }
-
         const { id } = req.params;
         if (!id) {
           return res(ctx.status(400), ctx.json({ errors: ['Id is required'] }));
         }
-        const { data: item, errorMessage } = repository.getItemById(
-          id as string
-        );
-        if (errorMessage) {
-          return res(ctx.status(404), ctx.json({ detail: errorMessage }));
+        const { data: item, error } = repository.getItemById(id as string);
+        if (error) {
+          return errorResponseFactory(res, ctx)(error);
         }
 
         return res(ctx.status(200), ctx.json(item));
       }),
 
       rest.post(`${baseUrl}/${entityName}`, (req, res, ctx) => {
-        const errorResponse = getErrorResponse(res, ctx);
-        if (errorResponse) {
-          return errorResponse;
-        }
-
         const item = req.body as T;
-
-        repository.addItem(item);
-        const id = req.url.searchParams.get('id');
-        if (id) {
-          localStorage.setItem('id', id);
+        const { error } = repository.addItem(item);
+        if (error) {
+          return errorResponseFactory(res, ctx)(error);
         }
+
         return res(ctx.status(201));
       }),
 
       rest.put(`${baseUrl}/${entityName}/:id`, (req, res, ctx) => {
-        const errorResponse = getErrorResponse(res, ctx);
-        if (errorResponse) {
-          return errorResponse;
-        }
-
         const item = req.body as T;
         const { id } = req.params;
-        const { data: itemInStore, errorMessage } = repository.getItemById(
-          id as string
-        );
-        if (itemInStore && !errorMessage) {
-          repository.editItem(item);
-          return res(ctx.status(200));
+        if (id !== item.id) {
+          return res(
+            ctx.status(400),
+            ctx.json({ errors: ['Id does not match'] })
+          );
         }
-        return res(
-          ctx.status(404),
-          ctx.json({ detail: `No ${entityName} of id ${id} found` })
-        );
+        const { error } = repository.editItem(item);
+        if (error) {
+          return errorResponseFactory(res, ctx)(error);
+        }
+        return res(ctx.status(200));
       }),
 
       rest.delete(`${baseUrl}/${entityName}/:id`, (req, res, ctx) => {
-        const errorResponse = getErrorResponse(res, ctx);
-        if (errorResponse) {
-          return errorResponse;
-        }
-
         const { id } = req.params;
         if (!id) {
-          console.log('id is required');
           return res(ctx.status(400), ctx.json({ errors: ['Id is required'] }));
         }
-        const { data: item, errorMessage } = repository.getItemById(
-          id as string
-        );
-        if (errorMessage || !item) {
-          return res(ctx.status(404), ctx.json({ detail: errorMessage }));
+        const { data: item, error } = repository.getItemById(id as string);
+        if (error) {
+          return errorResponseFactory(res, ctx)(error);
         }
-
+        if (!item) {
+          return res(ctx.status(404), ctx.json({ errors: ['Item not found'] }));
+        }
         repository.deleteItem(item.id);
         return res(ctx.status(204));
       }),

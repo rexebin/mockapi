@@ -1,5 +1,4 @@
-export * from './endpoints';
-export * from './responses';
+export { configMockApi, errorResponseFactory } from './endpoints';
 
-export { Store, Repository } from './repository';
+export { Store, Repository, Result } from './repository';
 export { BaseEntity } from './model';

@@ -1,12 +1,13 @@
 import { BaseEntity } from '../model';
 import { Store } from './store';
+import { Result } from './result';
 
 export type Repository<T extends BaseEntity> = {
   getItems: () => Result<T[]>;
   getItemById: (id: string | number) => Result<T>;
-  addItem: (item: T) => void;
-  deleteItem: (id: string | number) => void;
-  editItem: (item: T) => void;
+  addItem: (item: T) => Result<never>;
+  deleteItem: (id: string | number) => Result<never>;
+  editItem: (item: T) => Result<never>;
   seed: (items: T[]) => void;
 };
 
@@ -24,22 +25,6 @@ export function getRepository<T extends BaseEntity>(
   };
 }
 
-export interface Result<T> {
-  errorMessage?: string;
-  data?: T;
-}
-
-function ensureItemIsInStore<T extends BaseEntity>(
-  id: string | number,
-  entityName: string,
-  store: Store<T>
-) {
-  const { errorMessage } = getItemById<T>(id, entityName, store);
-  if (errorMessage) {
-    throw new Error(errorMessage);
-  }
-}
-
 function getItems<T extends BaseEntity>(
   entityName: string,
   store: Store<T>
@@ -47,7 +32,10 @@ function getItems<T extends BaseEntity>(
   const item = store.getItem(entityName);
   if (item === null) {
     return {
-      errorMessage: `No ${entityName} found`,
+      error: {
+        statusCode: 404,
+        message: `No ${entityName} found`,
+      },
     };
   }
   return {
@@ -60,15 +48,20 @@ function getItemById<T extends BaseEntity>(
   entityName: string,
   store: Store<T>
 ): Result<T> {
-  const { errorMessage, data } = getItems<T>(entityName, store);
-  if (errorMessage) {
+  const { error, data } = getItems<T>(entityName, store);
+  if (error) {
     return {
-      errorMessage,
+      error: error,
     };
   }
   const result = data?.find((item) => item.id === id);
   return {
-    errorMessage: result ? undefined : `No ${entityName} of id ${id} found`,
+    error: result
+      ? undefined
+      : {
+          statusCode: 404,
+          message: `No ${entityName} found with id ${id}`,
+        },
     data: result,
   };
 }
@@ -77,32 +70,49 @@ function addItem<T extends BaseEntity>(
   item: T,
   entityName: string,
   store: Store<T>
-): void {
-  const { data } = getItems<T>(entityName, store);
+): Result<never> {
+  const { data, error } = getItems<T>(entityName, store);
+  if (error) {
+    return {
+      error: error,
+    };
+  }
   store.setItem(entityName, [...(data ?? []), item]);
+  return {};
 }
 
 function deleteItem<T extends BaseEntity>(
   id: string | number,
   entityName: string,
   store: Store<T>
-): void {
-  ensureItemIsInStore(id, entityName, store);
-  const { data: existingSuppliers } = getItems<T>(entityName, store);
+): Result<never> {
+  const { error: itemNotFound } = getItemById<T>(id, entityName, store);
+  if (itemNotFound) {
+    return { error: itemNotFound };
+  }
+  const { data: existingSuppliers, error } = getItems<T>(entityName, store);
+  if (error) {
+    throw { error: error };
+  }
 
   const newItems = existingSuppliers?.filter((item) => item.id !== id);
   store.setItem(entityName, newItems ?? []);
+  return {};
 }
 
 function editItem<T extends BaseEntity>(
   item: T,
   entityName: string,
   store: Store<T>
-): void {
-  ensureItemIsInStore(item.id, entityName, store);
+): Result<never> {
+  const { error: itemNotFound } = getItemById<T>(item.id, entityName, store);
+  if (itemNotFound) {
+    return { error: itemNotFound };
+  }
   const { data: existingSuppliers } = getItems<T>(entityName, store);
   const newItems = existingSuppliers?.map((s) => (s.id === item.id ? item : s));
   store.setItem(entityName, newItems ?? []);
+  return {};
 }
 
 function seed<T extends BaseEntity>(

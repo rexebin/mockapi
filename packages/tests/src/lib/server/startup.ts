@@ -13,7 +13,7 @@ const handlers = [
   ...handlerFactory(heroKey, heroHandlers),
 ];
 
-const server = setupServer(...handlers);
+export const server = setupServer(...handlers);
 
 beforeAll(() => server.listen());
 

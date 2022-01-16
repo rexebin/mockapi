@@ -1,21 +1,19 @@
-import { getDefaultGetItemsResponse } from '@mockapi/msw';
+import { errorResponseFactory } from '@mockapi/msw';
 
 import { Hero, heroKey } from './hero';
 import { rest } from 'msw';
 import { baseUrl, repositoryFactory } from '../server/server';
 
+const repository = repositoryFactory<Hero>(heroKey);
+
 export const heroHandlers = [
   rest.get(`${baseUrl}/${heroKey}`, (req, res, ctx) => {
-    const defaultHttpResponse = getDefaultGetItemsResponse<Hero>(
-      heroKey,
-      repositoryFactory<Hero>(heroKey)
-    )(res, ctx);
-    if (defaultHttpResponse.response) {
-      return defaultHttpResponse.response;
+    const { data: items = [], error } = repository.getItems();
+    if (error) {
+      return errorResponseFactory(res, ctx)(error);
     }
-
     const search = req.url.searchParams.get('search');
-    const result = defaultHttpResponse.data.filter((hero) =>
+    const result = items.filter((hero) =>
       search ? hero.name.toLowerCase().includes(search?.toLowerCase()) : true
     );
 
@@ -23,17 +21,14 @@ export const heroHandlers = [
   }),
 
   rest.get(`${baseUrl}/${heroKey}/getByName/:name`, (req, res, ctx) => {
-    const defaultHttpResponse = getDefaultGetItemsResponse<Hero>(
-      heroKey,
-      repositoryFactory<Hero>(heroKey)
-    )(res, ctx);
-    if (defaultHttpResponse.response) {
-      return defaultHttpResponse.response;
+    const { data: items = [], error } = repository.getItems();
+    if (error) {
+      return errorResponseFactory(res, ctx)(error);
     }
 
     const { name } = req.params;
 
-    const result = defaultHttpResponse.data.find((hero) => hero.name === name);
+    const result = items.find((hero) => hero.name === name);
 
     return res(ctx.status(200), ctx.json(result));
   }),
