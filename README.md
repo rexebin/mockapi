@@ -8,7 +8,7 @@ Browser.
 
 However, just like developing a real API server, writing every endpoint is tedious, and it can get messy very quickly.
 
-`@mockapi/msw` is born to solve this problem. With `@mockapi/msw`, you can mock a whole set of standard CRUD endpoints
+`@mockapi/msw` was born to solve this problem. With `@mockapi/msw`, you can mock a whole set of standard CRUD endpoints
 for any entity without any code. All you have to do is configure your base URL and wire it up with `msw`.
 
 ## Endpoints Provided
